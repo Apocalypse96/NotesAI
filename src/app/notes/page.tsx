@@ -32,6 +32,7 @@ type Note = {
   title: string;
   content: string;
   created_at: string;
+  updated_at: string;
   user_id: string;
   tags?: string[]; // This is not a database column, but a derived property
 };
@@ -144,8 +145,12 @@ export default function NotesPage() {
           if (!noteTags[relation.note_id]) {
             noteTags[relation.note_id] = [];
           }
-          if (relation.tags && relation.tags.name) {
-            noteTags[relation.note_id].push(relation.tags.name);
+          if (relation.tags && Array.isArray(relation.tags)) {
+            relation.tags.forEach((tag) => {
+              if (tag.name) {
+                noteTags[relation.note_id].push(tag.name);
+              }
+            });
           }
         });
       }

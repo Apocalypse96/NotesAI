@@ -1,3 +1,14 @@
 {
-  "zencoder.enableRepoIndexing": true
+  "zencoder.enableRepoIndexing": true,
+  "cSpell.words": [
+    "Cdefs",
+    "Cpattern",
+    "Cradial",
+    "Crect",
+    "Cstop",
+    "Csvg",
+    "Groq",
+    "sonner",
+    "supabase"
+  ]
 }
