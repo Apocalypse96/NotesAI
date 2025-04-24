@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 interface ButtonProps {
-  className?: string;
+  className?: string | undefined;
   disabled?: boolean;
   variant?: string;
   size?: string;
-  [key: string]: any; // Add additional props as needed
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  type?: "button" | "submit" | "reset";
+  children?: React.ReactNode;
+  [key: string]: any; // Use any to avoid type conflicts with ReactNode
 }
 
 interface LoadingButtonProps extends ButtonProps {
