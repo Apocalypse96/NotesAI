@@ -96,9 +96,9 @@ async function summarizeWithGroq(
       try {
         const errorData = await response.json();
         console.error("Groq API error details:", errorData);
-      } catch (_) {
+      } catch {
         // If we can't parse the response, just continue
-        // Using underscore instead of 'e' to indicate unused parameter
+        // Removed unused parameter
       }
 
       return null;

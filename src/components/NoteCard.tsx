@@ -51,11 +51,6 @@ interface NoteCardProps {
   onSummarize: (id: string, content: string) => void;
 }
 
-// Add error interface
-interface ErrorWithMessage {
-  message: string;
-}
-
 export default function NoteCard({
   note,
   onUpdate,
@@ -73,15 +68,15 @@ export default function NoteCard({
     "lined" | "grid" | "dots" | "aged"
   >("lined");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { summarize, isLoading: isSummarizing } = useSummarize();
+  const { isLoading: isSummarizing } = useSummarize();
 
   useEffect(() => {
     const metaMatch = note.content.match(
       /<!-- noteColor: (.*?), noteStyle: (.*?) -->/
     );
     if (metaMatch) {
-      setNoteColor(metaMatch[1] as any);
-      setNoteStyle(metaMatch[2] as any);
+      setNoteColor(metaMatch[1] as "default" | "cream" | "yellow" | "blue" | "pink" | "green");
+      setNoteStyle(metaMatch[2] as "lined" | "grid" | "dots" | "aged");
     }
   }, [note.content]);
 
@@ -96,7 +91,6 @@ export default function NoteCard({
     setIsEditing(false);
   };
 
-  // Use the summarize function from useSummarize
   const handleSummarize = () => {
     onSummarize(note.id, note.content);
   };
