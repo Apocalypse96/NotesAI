@@ -1,34 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { User } from "@supabase/supabase-js";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
+
+interface ProfileError {
+  message: string;
+}
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const router = useRouter();
-
+  const [userId, setUserId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const supabase = createSupabaseClient();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const checkAuth = async () => {
       try {
         setLoading(true);
         const {
@@ -41,9 +42,9 @@ export default function ProfilePage() {
         }
 
         console.log("Profile user:", user);
-        setUser(user);
+        setName(user.user_metadata?.full_name || "");
         setEmail(user.email || "");
-        setFullName(user.user_metadata?.full_name || "");
+        setUserId(user.id || "");
       } catch (error) {
         console.error("Error fetching user:", error);
         toast.error("Failed to load profile");
@@ -52,29 +53,28 @@ export default function ProfilePage() {
       }
     };
 
-    fetchUser();
-  }, []);
+    checkAuth();
+  }, [supabase.auth]);
 
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) return;
-
     try {
-      setIsSaving(true);
+      setUpdating(true);
 
       const { error } = await supabase.auth.updateUser({
-        data: { full_name: fullName },
+        data: { full_name: name },
       });
 
       if (error) throw error;
 
       toast.success("Profile updated successfully");
-    } catch (error: any) {
-      console.error("Error updating profile:", error.message);
-      toast.error("Failed to update profile");
+    } catch (error: unknown) {
+      const profileError = error as ProfileError;
+      console.error("Error updating profile:", profileError.message);
+      toast.error(profileError.message || "Failed to update profile");
     } finally {
-      setIsSaving(false);
+      setUpdating(false);
     }
   };
 
@@ -82,7 +82,6 @@ export default function ProfilePage() {
     try {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
-      // Force a hard navigation
       window.location.href = "/login";
     } catch (error) {
       console.error("Error signing out:", error);
@@ -90,16 +89,15 @@ export default function ProfilePage() {
     }
   };
 
-  // Get initials for avatar fallback
   const getInitials = () => {
-    if (!user?.email) return "?";
-    return user.email.substring(0, 2).toUpperCase();
+    if (!email) return "?";
+    return email.substring(0, 2).toUpperCase();
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-3.5rem)]">
-        Loading...
+        <Loader2 className="animate-spin" />
       </div>
     );
   }
@@ -112,13 +110,13 @@ export default function ProfilePage() {
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage
-              src={user?.user_metadata?.avatar_url}
-              alt={user?.email || ""}
+              src={userId ? `/avatars/${userId}.png` : undefined}
+              alt={email || ""}
             />
             <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle>{fullName || email}</CardTitle>
+            <CardTitle>{name || email}</CardTitle>
             <CardDescription>{email}</CardDescription>
           </div>
         </CardHeader>
@@ -134,20 +132,20 @@ export default function ProfilePage() {
               </p>
             </div>
             <div className="space-y-2">
-              <label htmlFor="fullName" className="text-sm font-medium">
+              <label htmlFor="name" className="text-sm font-medium">
                 Full Name
               </label>
               <Input
-                id="fullName"
+                id="name"
                 placeholder="Your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Changes"}
+            <Button type="submit" disabled={updating}>
+              {updating ? "Saving..." : "Save Changes"}
             </Button>
             <Button variant="destructive" type="button" onClick={handleSignOut}>
               Sign Out

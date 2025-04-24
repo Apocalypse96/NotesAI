@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -15,7 +15,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { motion } from "framer-motion";
 import { PaperCard } from "@/components/ui/PaperCard";
 import { notesAnimations } from "@/styles/notes-theme";
-import { BookOpen, FileText, Plus, Search, Book, Sparkles } from "lucide-react";
+import { BookOpen, Plus, Book, Sparkles } from "lucide-react";
 import { NoteColorPicker } from "@/components/NoteColorPicker";
 import {
   DropdownMenu,
@@ -36,6 +36,10 @@ type Note = {
   tags?: string[]; // This is not a database column, but a derived property
 };
 
+interface ErrorWithMessage {
+  message: string;
+}
+
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
@@ -55,77 +59,39 @@ export default function NotesPage() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title">("newest");
   const supabase = createSupabaseClient();
   const router = useRouter();
-  const { summarize, isLoading: isSummarizing } = useSummarize();
+  const { summarize } = useSummarize();
 
   const allTags = Array.from(
     new Set(notes.flatMap((note) => note.tags || []))
   ).sort();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        console.log("No session found, redirecting to login");
-        router.push("/login");
-        return;
+  const sortNotes = useCallback(
+    (notesToSort: Note[], sortType: "newest" | "oldest" | "title") => {
+      switch (sortType) {
+        case "newest":
+          return [...notesToSort].sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          );
+        case "oldest":
+          return [...notesToSort].sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+          );
+        case "title":
+          return [...notesToSort].sort((a, b) =>
+            a.title.localeCompare(b.title)
+          );
+        default:
+          return notesToSort;
       }
-      console.log("Session found:", session.user);
-      fetchNotes();
-    };
+    },
+    []
+  );
 
-    checkAuth();
-  }, [router]);
-
-  useEffect(() => {
-    let result = [...notes];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (note) =>
-          note.title.toLowerCase().includes(query) ||
-          note.content.toLowerCase().includes(query) ||
-          (note.tags &&
-            note.tags.some((tag) => tag.toLowerCase().includes(query)))
-      );
-    }
-
-    if (activeTag) {
-      result = result.filter(
-        (note) => note.tags && note.tags.includes(activeTag)
-      );
-    }
-
-    result = sortNotes(result, sortBy);
-
-    setFilteredNotes(result);
-  }, [notes, searchQuery, activeTag, sortBy]);
-
-  const sortNotes = (
-    notesToSort: Note[],
-    sortType: "newest" | "oldest" | "title"
-  ) => {
-    switch (sortType) {
-      case "newest":
-        return [...notesToSort].sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-      case "oldest":
-        return [...notesToSort].sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-      case "title":
-        return [...notesToSort].sort((a, b) => a.title.localeCompare(b.title));
-      default:
-        return notesToSort;
-    }
-  };
-
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     try {
       setLoading(true);
       const {
@@ -191,13 +157,58 @@ export default function NotesPage() {
 
       setNotes(notesWithTags);
       setFilteredNotes(sortNotes(notesWithTags, sortBy));
-    } catch (error: any) {
-      console.error("Error fetching notes:", error.message);
+    } catch (error: unknown) {
+      console.error(
+        "Error fetching notes:",
+        (error as ErrorWithMessage).message
+      );
       toast.error("Failed to load notes");
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, sortBy, sortNotes]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        console.log("No session found, redirecting to login");
+        router.push("/login");
+        return;
+      }
+      console.log("Session found:", session.user);
+      fetchNotes();
+    };
+
+    checkAuth();
+  }, [router, fetchNotes, supabase.auth]);
+
+  useEffect(() => {
+    let result = [...notes];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (note) =>
+          note.title.toLowerCase().includes(query) ||
+          note.content.toLowerCase().includes(query) ||
+          (note.tags &&
+            note.tags.some((tag) => tag.toLowerCase().includes(query)))
+      );
+    }
+
+    if (activeTag) {
+      result = result.filter(
+        (note) => note.tags && note.tags.includes(activeTag)
+      );
+    }
+
+    result = sortNotes(result, sortBy);
+
+    setFilteredNotes(result);
+  }, [notes, searchQuery, activeTag, sortBy, sortNotes]);
 
   const createNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,8 +294,11 @@ export default function NotesPage() {
       setNoteColor("default");
       setNoteStyle("lined");
       fetchNotes();
-    } catch (error: any) {
-      console.error("Error creating note:", error.message);
+    } catch (error: unknown) {
+      console.error(
+        "Error creating note:",
+        (error as ErrorWithMessage).message
+      );
       toast.error("Failed to create note");
     } finally {
       setIsCreating(false);
@@ -388,8 +402,11 @@ export default function NotesPage() {
 
       toast.success("Note updated successfully");
       fetchNotes();
-    } catch (error: any) {
-      console.error("Error updating note:", error.message);
+    } catch (error: unknown) {
+      console.error(
+        "Error updating note:",
+        (error as ErrorWithMessage).message
+      );
       toast.error("Failed to update note");
     }
   };
@@ -415,8 +432,11 @@ export default function NotesPage() {
 
       toast.success("Note deleted successfully");
       fetchNotes();
-    } catch (error: any) {
-      console.error("Error deleting note:", error.message);
+    } catch (error: unknown) {
+      console.error(
+        "Error deleting note:",
+        (error as ErrorWithMessage).message
+      );
       toast.error("Failed to delete note");
     }
   };

@@ -13,6 +13,10 @@ export type Note = {
   user_id: string;
 };
 
+interface NoteError {
+  message: string;
+}
+
 export function useNotes() {
   const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
@@ -85,7 +89,7 @@ export function useNotes() {
       toast.success("Note created successfully");
       queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
-    onError: (error: any) => {
+    onError: (error: NoteError) => {
       toast.error(error.message || "Failed to create note");
     },
   });
@@ -104,7 +108,7 @@ export function useNotes() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      
+
       if (!session) {
         throw new Error("You must be logged in to update notes");
       }
@@ -119,14 +123,14 @@ export function useNotes() {
       if (error) {
         throw error;
       }
-      
+
       return data[0] as Note;
     },
     onSuccess: () => {
       toast.success("Note updated successfully");
       queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
-    onError: (error: any) => {
+    onError: (error: NoteError) => {
       toast.error(error.message || "Failed to update note");
     },
   });
@@ -158,7 +162,7 @@ export function useNotes() {
       toast.success("Note deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
-    onError: (error: any) => {
+    onError: (error: NoteError) => {
       toast.error(error.message || "Failed to delete note");
     },
   });

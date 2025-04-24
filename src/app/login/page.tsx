@@ -19,6 +19,10 @@ import { motion } from "framer-motion";
 import { FiLock, FiMail, FiAlertCircle } from "react-icons/fi";
 import Image from "next/image";
 
+interface AuthError {
+  message: string;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,9 +47,10 @@ export default function LoginPage() {
       toast.success("Logged in successfully");
       // Explicitly redirect to notes page instead of root
       router.push("/notes");
-    } catch (error: any) {
-      console.error("Error logging in:", error.message);
-      toast.error(error.message || "Failed to log in");
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      console.error("Error logging in:", authError.message);
+      toast.error(authError.message || "Failed to log in");
     } finally {
       setLoading(false);
     }
@@ -66,9 +71,10 @@ export default function LoginPage() {
       if (error) throw error;
 
       // The redirect will happen automatically
-    } catch (error: any) {
-      setError(error.message || "An error occurred during Google sign in");
-      console.error("Google sign in error:", error);
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      setError(authError.message || "An error occurred during Google sign in");
+      console.error("Google sign in error:", authError);
       setGoogleLoading(false);
     }
   };

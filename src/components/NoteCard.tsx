@@ -6,21 +6,12 @@ import { useSummarize } from "@/hooks/useSummarize";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -58,6 +49,11 @@ interface NoteCardProps {
   ) => void;
   onDelete: (id: string) => void;
   onSummarize: (id: string, content: string) => void;
+}
+
+// Add error interface
+interface ErrorWithMessage {
+  message: string;
 }
 
 export default function NoteCard({
@@ -100,6 +96,7 @@ export default function NoteCard({
     setIsEditing(false);
   };
 
+  // Use the summarize function from useSummarize
   const handleSummarize = () => {
     onSummarize(note.id, note.content);
   };
