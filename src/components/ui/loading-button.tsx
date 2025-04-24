@@ -12,7 +12,7 @@ interface ButtonProps {
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   type?: "button" | "submit" | "reset";
   children?: React.ReactNode;
-  [key: string]: any; // Use any to avoid type conflicts with ReactNode
+  [key: string]: unknown; // Use unknown instead of any for better type safety
 }
 
 interface LoadingButtonProps extends ButtonProps {

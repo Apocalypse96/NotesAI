@@ -684,6 +684,7 @@ export default function NotesPage() {
             const noteWithCleanContent = {
               ...note,
               content: contentWithoutMeta,
+              updated_at: note.updated_at || note.created_at, // Ensure updated_at is always present
             };
 
             return (
