@@ -16,6 +16,10 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 
+interface AuthError {
+  message: string;
+}
+
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,9 +65,10 @@ export default function SignUpPage() {
       } else {
         router.push("/login");
       }
-    } catch (error: any) {
-      console.error("Sign up error:", error);
-      setError(error.message || "An error occurred during sign up");
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      console.error("Sign up error:", authError);
+      setError(authError.message || "An error occurred during sign up");
     } finally {
       setLoading(false);
     }
@@ -84,9 +89,10 @@ export default function SignUpPage() {
       if (error) throw error;
 
       // The redirect will happen automatically
-    } catch (error: any) {
-      setError(error.message || "An error occurred during Google sign up");
-      console.error("Google sign up error:", error);
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      setError(authError.message || "An error occurred during Google sign up");
+      console.error("Google sign up error:", authError);
       setGoogleLoading(false);
     }
   };

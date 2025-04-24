@@ -3,6 +3,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+interface SummarizeError {
+  message: string;
+}
+
 // Create a function to summarize text using only Groq API
 export function useSummarize() {
   const summarizeMutation = useMutation({
@@ -10,7 +14,7 @@ export function useSummarize() {
       try {
         // Get Groq API key
         const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
-        
+
         try {
           console.log("Attempting to summarize with Groq API");
           const summary = await summarizeWithGroq(text, groqApiKey || null);
@@ -22,7 +26,7 @@ export function useSummarize() {
           console.error("Error with Groq API:", error);
           console.log("Groq API failed, using mock summary");
         }
-        
+
         // Fallback to mock summary if Groq API fails
         return mockSummarize(text);
       } catch (error) {
@@ -31,7 +35,7 @@ export function useSummarize() {
         return mockSummarize(text);
       }
     },
-    onError: (error: any) => {
+    onError: (error: SummarizeError) => {
       toast.error(error.message || "Failed to summarize note");
     },
   });
@@ -54,43 +58,49 @@ async function summarizeWithGroq(
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    
+
     if (apiKey) {
       headers["Authorization"] = `Bearer ${apiKey}`;
     }
-    
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI assistant that summarizes text. Provide a concise summary in 2-3 sentences.",
-          },
-          {
-            role: "user",
-            content: `Summarize the following text:\n\n${text}`,
-          },
-        ],
-        temperature: 0.5,
-        max_tokens: 200,
-      }),
-    });
+
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an AI assistant that summarizes text. Provide a concise summary in 2-3 sentences.",
+            },
+            {
+              role: "user",
+              content: `Summarize the following text:\n\n${text}`,
+            },
+          ],
+          temperature: 0.5,
+          max_tokens: 200,
+        }),
+      }
+    );
 
     if (!response.ok) {
-      console.error(`Groq API error: ${response.status} ${response.statusText}`);
-      
+      console.error(
+        `Groq API error: ${response.status} ${response.statusText}`
+      );
+
       // Try to get more details from the response
       try {
         const errorData = await response.json();
         console.error("Groq API error details:", errorData);
-      } catch (e) {
+      } catch (_) {
         // If we can't parse the response, just continue
+        // Using underscore instead of 'e' to indicate unused parameter
       }
-      
+
       return null;
     }
 

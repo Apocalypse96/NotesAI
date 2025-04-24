@@ -1,21 +1,14 @@
-import * as React from "react";
-import { Button } from "./button";
-import { buttonVariants } from "./button";
-import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+"use client";
 
-export interface LoadingButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ButtonProps } from "@/components/ui/button";
+
+interface LoadingButtonProps extends ButtonProps {
   isLoading?: boolean;
   loadingText?: string;
-  variant?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link";
-  size?: "default" | "sm" | "lg" | "icon";
 }
 
 const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonProps>(
