@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (groqApiKey) {
       // Use Groq API if key is available
-      const groq = new Groq({ apiKey: groqApiKey });
+      const groq = new (Groq as any)({ apiKey: groqApiKey });
 
       const completion = await groq.chat.completions.create({
         messages: [
