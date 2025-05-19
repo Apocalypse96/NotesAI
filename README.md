@@ -114,6 +114,4 @@ The application is deployed on Vercel. To deploy your own instance:
 3. Configure the environment variables in the Vercel dashboard
 4. Deploy the application
 
-## License
 
-This project is licensed under the MIT License.
